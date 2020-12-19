@@ -1,7 +1,6 @@
 package user.repository
 
 import java.util.UUID
-import java.util.UUID.randomUUID
 
 import anorm._
 import javax.inject.Inject
@@ -31,10 +30,9 @@ class UserRepository @Inject()(db: Database, databaseExecutionContext: Execution
   }
 
   def createUser(user: User): Future[Boolean]  = {
-    val id = user.user_id.getOrElse(randomUUID())
     Future {
       db.withConnection { implicit conn =>
-        SQL"INSERT INTO users (user_id, name, email) VALUES (${id}::uuid, ${user.name}, ${user.email})".execute()
+        SQL"INSERT INTO users (user_id, name, email) VALUES (${user.user_id}::uuid, ${user.name}, ${user.email})".execute()
       }
     }(databaseExecutionContext)
   }
