@@ -33,13 +33,13 @@ class ProfileController @Inject()(val controllerComponents: ControllerComponents
   }
 
   def deleteProfileById(id: UUID): Action[AnyContent] = Action.async { implicit request =>
-    authService.withUser(_ =>
-      profileService.deleteProfileById(id).map { res =>
+    authService.withUser(user =>
+      if (user.isAdmin == true) profileService.deleteProfileById(id).map { res =>
         res match {
           case 1 => Ok("Ok")
-          case 0 => BadRequest("Error when deleting profile.")
+          case 0 => BadRequest("Error when deleting profile")
         }
-    })
+      } else Future { Unauthorized("Unauthorized to perform operation") })
   }
 
   def createProfile: Action[JsValue] = Action(parse.json).async { implicit request =>
@@ -52,8 +52,8 @@ class ProfileController @Inject()(val controllerComponents: ControllerComponents
             .createProfile(Profile(UUID.randomUUID(), newProfile.name, newProfile.email))
             .map { res =>
               res match {
-                case Some(_) => BadRequest("Error when creating profile.")
-                case _       => Ok("Ok")
+                case Left(_)        => BadRequest("Error when creating profile")
+                case Right(profile) => Ok(Json.toJson(profile))
               }
             }
         }
@@ -69,7 +69,7 @@ class ProfileController @Inject()(val controllerComponents: ControllerComponents
           profileService.updateProfileById(id, profile).map { res =>
             res match {
               case 1 => Ok("Ok")
-              case 0 => BadRequest("Error when updating profile.")
+              case 0 => BadRequest("Error when updating profile")
             }
           }
         }
